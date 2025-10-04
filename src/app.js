@@ -29,6 +29,29 @@ app.post("/signup", async (req, res) => {
     res.status(400).send(err.message);
   }
 });
+
+//Login API
+app.post("/login",async(req,res) => {
+
+    try{
+        const {emailID, password} = req.body;
+
+        const user = await User.findOne({emailID: emailID});
+        if(!user) {
+            throw new Error("Email not found");
+        }
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if(isPasswordValid){
+            res.send("Login successful");
+        }else {
+            throw new Error("Password is incorrect");
+        }
+    }
+    catch(err){
+        res.status(400).send(err.message);
+    }
+});
 //Find user by emailID
 app.get("/user", async (req, res) => {
   const userEmail = req.body.emailID;
