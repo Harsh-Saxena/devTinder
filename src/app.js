@@ -3,6 +3,21 @@ const User = require("./models/user");
 const app = express();
 const { connectDB } = require("./config/database");
 
+
+app.use(express.json()); // Middleware to parse JSON request bodies for all apis
+
+app.post("/signup", async (req, res) => {
+  //Creating instance of user model
+  const user = new User(req.body);
+
+  try {
+    await user.save();
+    res.send("User added succsessfully");
+  } catch (err) {
+    console.log("Error in creating user", err);
+  }
+});
+
 connectDB()
   .then(() => {
     console.log("DB connection established");
@@ -13,23 +28,3 @@ connectDB()
   .catch((err) => {
     console.log("DB connection error");
   });
-
-app.post("/signup", async (req, res) => {
-  const userObj = {
-    firstName: "Harsh",
-    lastName: "Saxena",
-    emailID: "hsaxena@gmail.com",
-    password: "harsh123",
-    age: 29,
-    gender: "Male",
-  };
-  //Creating instance of user model
-  const user = new User(userObj);
-
-  try {
-    await user.save();
-    res.send("User added succsessfully");
-  } catch (err) {
-    console.log("Error in creating user", err);
-  }
-});
