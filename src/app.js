@@ -3,14 +3,25 @@ const User = require("./models/user");
 
 const app = express();
 const { connectDB } = require("./config/database");
+const { validateSignupData } = require("./utils/validation");
+const bcrypt = require("bcrypt");
 
 app.use(express.json()); // Middleware to parse JSON request bodies for all apis
 
 //Post data to create user
 app.post("/signup", async (req, res) => {
-  //Creating instance of user model
-  const user = new User(req.body);
   try {
+
+    //Data validation
+    validateSignupData(req);
+
+    //password encryption
+    const {password} = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    req.body.password = hashedPassword;
+
+    //Creating instance of user model
+    const user = new User(req.body);
     await user.save();
     res.send("User added succsessfully");
   } catch (err) {
