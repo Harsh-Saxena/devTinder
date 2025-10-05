@@ -5,18 +5,21 @@ const app = express();
 const { connectDB } = require("./config/database");
 const { validateSignupData } = require("./utils/validation");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middlewares/auth");
 
 app.use(express.json()); // Middleware to parse JSON request bodies for all apis
+app.use(cookieParser()); // Middleware to parse cookies
 
 //Post data to create user
 app.post("/signup", async (req, res) => {
   try {
-
     //Data validation
     validateSignupData(req);
 
     //password encryption
-    const {password} = req.body;
+    const { password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
     req.body.password = hashedPassword;
 
@@ -31,26 +34,38 @@ app.post("/signup", async (req, res) => {
 });
 
 //Login API
-app.post("/login",async(req,res) => {
+app.post("/login", async (req, res) => {
+  try {
+    const { emailID, password } = req.body;
 
-    try{
-        const {emailID, password} = req.body;
-
-        const user = await User.findOne({emailID: emailID});
-        if(!user) {
-            throw new Error("Email not found");
-        }
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-
-        if(isPasswordValid){
-            res.send("Login successful");
-        }else {
-            throw new Error("Password is incorrect");
-        }
+    const user = await User.findOne({ emailID: emailID });
+    if (!user) {
+      throw new Error("Email not found");
     }
-    catch(err){
-        res.status(400).send(err.message);
+    const isPasswordValid = await user.validatePassword(password);
+
+    if (isPasswordValid) {
+      //Create a JWT Token
+      const token = await user.getJWT();
+      //setting cookie in the browser
+      res.cookie("token", token);
+      res.send("Login successful");
+    } else {
+      throw new Error("Password is incorrect");
     }
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
+//get profile of logged in user
+app.get("/profile", userAuth, async (req, res) => {
+  try {
+    const user = req.user; //getting user from req object which is set in userAuth middleware
+    res.send(user);
+  } catch (err) {
+    res.status(400).send("ERROR: ", err.message);
+  }
 });
 //Find user by emailID
 app.get("/user", async (req, res) => {
@@ -89,24 +104,24 @@ app.delete("/deleteUser", async (req, res) => {
 
 //Update the User
 app.patch("/updateUser", async (req, res) => {
-    const userID = req.body.userID;
-    const data = req.body;
+  const userID = req.body.userID;
+  const data = req.body;
 
-    const ALLOWED_UPDATES = ['firstName','lastName','password'];
+  const ALLOWED_UPDATES = ["firstName", "lastName", "password"];
 
-    try{
+  try {
     const isUpdateAllowed = Object.keys(data).every((key) => {
-        ALLOWED_UPDATES.includes(key);
+      ALLOWED_UPDATES.includes(key);
     });
 
-    if(!isUpdateAllowed){
-        return res.status(400).send("Update is not allowed");
+    if (!isUpdateAllowed) {
+      return res.status(400).send("Update is not allowed");
     }
-        const updateUser = await User.findByIdAndUpdate(userID, data);
-        res.send("User updated successfully");  
-    }catch(err){
-        console.log("Error in updating user", err);
-    }
+    const updateUser = await User.findByIdAndUpdate(userID, data);
+    res.send("User updated successfully");
+  } catch (err) {
+    console.log("Error in updating user", err);
+  }
 });
 
 connectDB()
