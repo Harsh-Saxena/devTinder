@@ -5,59 +5,74 @@ const bcrypt = require("bcrypt");
 
 const { Schema } = mongoose;
 
-const userSchema = new Schema(
+const userSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
       required: true,
-      minLength: 2,
-      maxLength: 30,
+      minLength: 3,
+      maxLength: 50, // Fixed typo: maxLenght → maxLength
     },
     lastName: {
       type: String,
       required: true,
-      minLength: 4,
-      maxLength: 30,
     },
-    emailID: {
+    emailId: {
       type: String,
-      required: true,
       lowercase: true,
+      required: true,
       unique: true,
+      trim: true,
       validate(value) {
         if (!validator.isEmail(value)) {
-          throw new Error("Email is not valid");
+          throw new Error("Invalid Email :" + value);
         }
       },
     },
     password: {
       type: String,
       required: true,
+      validate(value) {
+        if (!validator.isStrongPassword(value)) {
+          throw new Error("Enter Strong password :" + value);
+        }
+      },
     },
     age: {
       type: Number,
-      required: true,
+      required: false,
       min: 18,
-      max: 100,
     },
     gender: {
       type: String,
-      required: true,
+      required: false,
+      trim: true,
       validate(value) {
-        if (!["Male", "Female", "Other"].includes(value)) {
-          throw new Error("Gender does not valid");
+        if (
+          !["male", "female", "others", "Male", "Female", "Others"].includes(
+            value
+          )
+        ) {
+          throw new Error("Not a valid gender (Male , Female and other)");
         }
       },
+    },
+    about: {
+      type: String,
+      default: "Dev is in search for someone here",
     },
     photoURL: {
       type: String,
       default:
         "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",
-      validate(value) {
+        validate(value) {
         if (!validator.isURL(value)) {
-          throw new Error("Photo URL is not valid");
+          throw new Error("Invalid URL :" + value);
         }
       },
+    },
+    skills: {
+      type: [String],
     },
   },
   {

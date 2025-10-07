@@ -12,117 +12,15 @@ const { userAuth } = require("./middlewares/auth");
 app.use(express.json()); // Middleware to parse JSON request bodies for all apis
 app.use(cookieParser()); // Middleware to parse cookies
 
-//Post data to create user
-app.post("/signup", async (req, res) => {
-  try {
-    //Data validation
-    validateSignupData(req);
+const { authRouter } = require("./routes/auth");
+const { profileRouter } = require("./routes/profile");
+const { requestRouter } = require("./routes/request"); 
 
-    //password encryption
-    const { password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    req.body.password = hashedPassword;
 
-    //Creating instance of user model
-    const user = new User(req.body);
-    await user.save();
-    res.send("User added succsessfully");
-  } catch (err) {
-    console.log("Error in creating user", err.message);
-    res.status(400).send(err.message);
-  }
-});
 
-//Login API
-app.post("/login", async (req, res) => {
-  try {
-    const { emailID, password } = req.body;
-
-    const user = await User.findOne({ emailID: emailID });
-    if (!user) {
-      throw new Error("Email not found");
-    }
-    const isPasswordValid = await user.validatePassword(password);
-
-    if (isPasswordValid) {
-      //Create a JWT Token
-      const token = await user.getJWT();
-      //setting cookie in the browser
-      res.cookie("token", token);
-      res.send("Login successful");
-    } else {
-      throw new Error("Password is incorrect");
-    }
-  } catch (err) {
-    res.status(400).send(err.message);
-  }
-});
-
-//get profile of logged in user
-app.get("/profile", userAuth, async (req, res) => {
-  try {
-    const user = req.user; //getting user from req object which is set in userAuth middleware
-    res.send(user);
-  } catch (err) {
-    res.status(400).send("ERROR: ", err.message);
-  }
-});
-//Find user by emailID
-app.get("/user", async (req, res) => {
-  const userEmail = req.body.emailID;
-  try {
-    const user = await User.find({ emailID: userEmail });
-    if (user.length === 0) {
-      return res.status(404).send("User not found");
-    } else {
-      res.send(user);
-    }
-  } catch (err) {
-    console.log("Error in creating user", err);
-  }
-});
-//Get all user from database
-app.get("/feed", async (req, res) => {
-  try {
-    const user = await User.find();
-    res.send(user);
-  } catch (err) {
-    console.log("Error in creating user", err);
-  }
-});
-
-//delete user api
-app.delete("/deleteUser", async (req, res) => {
-  const userID = req.body.userID;
-  try {
-    const deleteUser = await User.findByIdAndDelete(userID);
-    res.send("User deleted successfully");
-  } catch (err) {
-    console.log("Error in deleting user", err);
-  }
-});
-
-//Update the User
-app.patch("/updateUser", async (req, res) => {
-  const userID = req.body.userID;
-  const data = req.body;
-
-  const ALLOWED_UPDATES = ["firstName", "lastName", "password"];
-
-  try {
-    const isUpdateAllowed = Object.keys(data).every((key) => {
-      ALLOWED_UPDATES.includes(key);
-    });
-
-    if (!isUpdateAllowed) {
-      return res.status(400).send("Update is not allowed");
-    }
-    const updateUser = await User.findByIdAndUpdate(userID, data);
-    res.send("User updated successfully");
-  } catch (err) {
-    console.log("Error in updating user", err);
-  }
-});
+app.use("/",authRouter);
+app.use("/",profileRouter);
+app.use("/",requestRouter); 
 
 connectDB()
   .then(() => {

@@ -2,7 +2,7 @@ const validator = require("validator");
 
 const validateSignupData = (req) => {
 
-    const { firstName, lastName, emailID, password, age } = req.body;
+    const { firstName, lastName, emailId, password, age } = req.body;
 
     if(!firstName || !lastName) {
         throw new Error("Name fields cannot be empty");
@@ -10,7 +10,7 @@ const validateSignupData = (req) => {
         throw new Error("First name must be between 2 and 30 characters");
     }else if (lastName.length < 2 || lastName.length > 30) {
         throw new Error("Last name must be between 4 and 30 characters");
-    }else if(!validator.isEmail(emailID)){
+    }else if(!validator.isEmail(emailId)){
         throw new Error("Email is not valid");
     }else if(!validator.isStrongPassword(password)){
         throw new Error("Password is not strong enough");
@@ -19,4 +19,13 @@ const validateSignupData = (req) => {
     }   
 };
 
-module.exports = {validateSignupData};
+const validateEditProfileData = (req) => {
+
+    const allowedEditField = ["firstName","lastName","emailId","photoURL","gender","age","skills","about"];
+    console.log(req.body,"req body")
+    const isEditAllowed = Object.keys(req.body).every((field) => allowedEditField.includes(field));
+console.log(isEditAllowed,"isEditAllowed")
+    return isEditAllowed;
+};
+
+module.exports = {validateSignupData, validateEditProfileData};
