@@ -10,7 +10,7 @@ profileRouter.get("/profile/view", userAuth, async (req, res) => {
     const user = req.user; //getting user from req object which is set in userAuth middleware
     res.send(user);
   } catch (err) {
-    res.status(400).send("ERROR: ", err.message);
+    res.status(401).send("ERROR: ", err.message);
   }
 });
 

@@ -8,6 +8,13 @@ const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 const { userAuth } = require("./middlewares/auth");
+const cors = require("cors");
+
+app.use(cors({
+  origin: "http://localhost:5175", // frontend URL
+  credentials: true
+}));
+
 
 app.use(express.json()); // Middleware to parse JSON request bodies for all apis
 app.use(cookieParser()); // Middleware to parse cookies
@@ -15,7 +22,7 @@ app.use(cookieParser()); // Middleware to parse cookies
 const { authRouter } = require("./routes/auth");
 const { profileRouter } = require("./routes/profile");
 const { requestRouter } = require("./routes/request"); 
-const { userRouter } = require("./routes/user"); 
+const { userRouter } = require("./routes/user");
 
 
 
