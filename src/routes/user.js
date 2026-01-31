@@ -4,13 +4,16 @@ const userRouter = express.Router();
 const ConnectionRequest = require("../models/connectionRequests");
 const User = require("../models/user");
 //Get all pending connection request for all user
+
+const USER_SAFE_DATA = "firstName lastName photoURL age gender about skills";
+
 userRouter.get("/user/requests/recieved", userAuth, async (req, res) => {
   try {
     const loggedInUser = req.user;
     const connectionRequests = await ConnectionRequest.find({
       toUserId: loggedInUser._id,
       status: "interested",
-    }).populate("fromUserId",["firstName","lastName"]);
+    }).populate("fromUserId",USER_SAFE_DATA);
 
     res.json({
       message: "Data fetched successfully",
@@ -29,7 +32,7 @@ userRouter.get("/user/requests/connections", userAuth, async (req, res) => {
     const connections = await ConnectionRequest.find({
       $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
       status: "accepted",
-    }).populate("fromUserId toUserId",["firstName","lastName"]);
+    }).populate("fromUserId toUserId",USER_SAFE_DATA);
 
     const data = connections.map((row) => {
       if (row.fromUserId._id.equals(loggedInUser._id)) {

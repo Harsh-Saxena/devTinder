@@ -8,28 +8,33 @@ const bcrypt = require("bcrypt");
 //Post data to create user
 authRouter.post("/signup", async (req, res) => {
   try {
-    //Data validation
+    // Validation of data
     validateSignupData(req);
 
-    //password encryption
-    const { password, emailId } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    req.body.password = hashedPassword;
+    const { firstName, lastName, emailId, password } = req.body;
 
-    const checkEmail = await User.findOne({ emailId });
-    console.log(checkEmail);
-    if (checkEmail) {
-      throw new Error("Email Already Exist");
-    }
+    // Encrypt the password
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
 
-    console.log(req.body);
-    //Creating instance of user model
-    const user = new User(req.body);
-    await user.save();
-    res.send("User added succsessfully");
+    //   Creating a new instance of the User model
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
+
+    const savedUser = await user.save();
+    const token = await savedUser.getJWT();
+
+    res.cookie("token", token, {
+      expires: new Date(Date.now() + 8 * 3600000),
+    });
+
+    res.json({ message: "User Added successfully!", data: savedUser });
   } catch (err) {
-    console.log("Error in creating user", err.message);
-    res.status(400).send(err.message);
+    res.status(400).send("ERROR : " + err.message);
   }
 });
 
